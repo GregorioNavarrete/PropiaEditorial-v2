@@ -853,13 +853,13 @@
   </div>
 
   <!-- ======================================================================
-       MODAL: ESCANEAR CARTA EN PAPEL (OCR ESPAÑOL + EXTRACCIÓN DE DIBUJOS)
+       MODAL: ESCANEAR CARTA EN PAPEL (PP-OCRv5 NEURONAL + EXTRACCIÓN DE DIBUJOS)
        ====================================================================== -->
   <div id="paperScannerModal" class="sl-modal-backdrop is-hidden" role="dialog" aria-modal="true" aria-labelledby="paperScannerTitle">
-    <div class="sl-modal-card scanner-modal-card">
-      <div class="sl-modal-head">
+    <div class="sl-modal-dialog scanner-modal-card">
+      <div class="sl-modal-header">
         <div>
-          <span class="sl-eyebrow">Digitalizador de Cartas &amp; Manuscritos · OCR Español + Grabado 300 DPI</span>
+          <span class="sl-eyebrow">Digitalizador de Cartas &amp; Manuscritos · Motor Neuronal PP-OCRv5 Español + Grabado 300 DPI</span>
           <h2 id="paperScannerTitle" class="sl-section-heading" style="margin: 2px 0 0;">Escanear Carta o Poema en Papel</h2>
         </div>
         <button type="button" id="btnClosePaperScanner" class="sl-btn sl-btn--sm" aria-label="Cerrar escáner de cartas">
@@ -868,50 +868,75 @@
       </div>
 
       <div class="scanner-grid">
-        <!-- COLUMNA IZQUIERDA: CAPTURA / FOTO + RECORTE MANUAL DE DIBUJOS -->
+        <!-- COLUMNA IZQUIERDA: PESTAÑAS NO BLOQUEANTES (SUBIR ARCHIVO / CÁMARA EN VIVO) + RECORTE -->
         <div class="scanner-col">
-          <div id="scannerDropzone" class="scanner-dropzone">
-            <input id="scannerFileInput" type="file" accept="image/jpeg,image/png,image/webp" class="is-hidden">
-            <input id="scannerCameraFileInput" type="file" accept="image/*" capture="environment" class="is-hidden">
-            <p class="scanner-dropzone__title">Subí una foto de tu carta en papel o sacá una con la cámara</p>
-            <p class="sl-muted" style="font-size: 11.5px; margin: 4px 0 10px;">
-              Acepta JPG, PNG o WebP. Reconoce letras en español y detecta dibujos hechos a mano.
-            </p>
-            <div class="scanner-capture-actions">
-              <button type="button" id="btnScannerPickFile" class="sl-btn sl-btn--sm sl-btn--primary">
-                Elegir Foto / Escaneo
-              </button>
-              <button type="button" id="btnScannerMobileCam" class="sl-btn sl-btn--sm sl-btn--cornflower">
-                Cámara del Dispositivo
-              </button>
-              <button type="button" id="btnScannerOpenWebcam" class="sl-btn sl-btn--sm">
-                Cámara en Vivo
-              </button>
+          <div class="art-tabs" role="tablist" aria-label="Fuente de captura de la carta">
+            <button type="button" id="scannerTabBtnUpload" class="art-tab-btn is-active" role="tab" aria-selected="true">
+              1. Subir Foto / Archivo
+            </button>
+            <button type="button" id="scannerTabBtnCamera" class="art-tab-btn" role="tab" aria-selected="false">
+              2. Cámara en Vivo
+            </button>
+          </div>
+
+          <!-- PESTAÑA 1: SUBIR O PEGAR FOTO -->
+          <div id="scannerPanelUpload">
+            <div id="scannerDropzone" class="scanner-dropzone">
+              <input id="scannerFileInput" type="file" accept="image/jpeg,image/png,image/webp" class="is-hidden">
+              <input id="scannerCameraFileInput" type="file" accept="image/*" capture="environment" class="is-hidden">
+              <p class="scanner-dropzone__title">Arrastrá o elegí una foto de tu carta (también podés pegar con Ctrl+V)</p>
+              <p class="sl-muted" style="font-size: 11.5px; margin: 4px 0 10px;">
+                JPG, PNG o WebP. Nivela sombras del papel, reconoce letra en español y separa dibujos a 300 DPI.
+              </p>
+              <div class="scanner-capture-actions">
+                <button type="button" id="btnScannerPickFile" class="sl-btn sl-btn--sm sl-btn--primary">
+                  Elegir Foto / Escaneo
+                </button>
+                <button type="button" id="btnScannerMobileCam" class="sl-btn sl-btn--sm sl-btn--cornflower" title="En celulares abre directamente la cámara trasera de alta resolución">
+                  Foto desde Celular
+                </button>
+              </div>
             </div>
           </div>
 
-          <!-- Cámara en vivo (desktop/móvil) -->
-          <div id="scannerWebcamWrap" class="scanner-camera-wrap is-hidden">
-            <video id="scannerWebcamVideo" autoplay playsinline muted class="scanner-webcam-video"></video>
+          <!-- PESTAÑA 2: CÁMARA EN VIVO (NO BLOQUEANTE, CON SELECTOR Y TIMEOUT SEGURO) -->
+          <div id="scannerPanelCamera" class="scanner-camera-wrap is-hidden">
+            <div class="scanner-camera-toolbar">
+              <select id="scannerCameraDeviceSelect" class="sl-select scanner-cam-select" aria-label="Seleccionar cámara">
+                <option value="">Cámara predeterminada</option>
+              </select>
+              <button type="button" id="btnScannerMirrorToggle" class="sl-btn sl-btn--sm" title="Espejar vista de cámara">
+                Espejar
+              </button>
+            </div>
+
+            <div class="scanner-video-box">
+              <video id="scannerWebcamVideo" autoplay playsinline muted class="scanner-webcam-video"></video>
+              <div id="scannerCameraOverlayMsg" class="scanner-camera-overlay is-hidden"></div>
+            </div>
+
             <div class="scanner-capture-actions" style="margin-top: 8px;">
-              <button type="button" id="btnScannerTakePhoto" class="sl-btn sl-btn--sm sl-btn--lime">
-                Tomar Foto de la Carta
+              <button type="button" id="btnScannerTakePhoto" class="sl-btn sl-btn--sm sl-btn--lime" disabled>
+                Capturar Foto de la Carta
+              </button>
+              <button type="button" id="btnScannerRetryCamera" class="sl-btn sl-btn--sm">
+                Reiniciar Cámara
               </button>
               <button type="button" id="btnScannerStopWebcam" class="sl-btn sl-btn--sm">
-                Cancelar Cámara
+                Volver a Subir Archivo
               </button>
             </div>
           </div>
 
-          <!-- Opciones de escaneo -->
+          <!-- Opciones de reconocimiento y mejora de papel -->
           <div class="sl-card scanner-options-card">
             <div class="two-col-fields">
               <div class="sl-field">
-                <label class="sl-label" for="scannerEnhanceSelect">Contraste del Papel</label>
+                <label class="sl-label" for="scannerEnhanceSelect">Limpieza de Papel y Tinta</label>
                 <select id="scannerEnhanceSelect" class="sl-select">
-                  <option value="standard" selected>Estándar (Tinta oscura)</option>
-                  <option value="light_ink">Lápiz / Tinta clara</option>
-                  <option value="shadow">Foto con sombra / luz irregular</option>
+                  <option value="standard" selected>Auto Inteligente (elimina sombras)</option>
+                  <option value="light_ink">Realzar Lápiz / Birome Fina / Cursiva</option>
+                  <option value="shadow">Sombra Fuerte / Hoja Rayada</option>
                 </select>
               </div>
               <div class="sl-field">
@@ -924,24 +949,38 @@
               </div>
             </div>
 
+            <div class="two-col-fields" style="margin-top: 8px;">
+              <div class="sl-field">
+                <label class="sl-label" for="scannerEngineSelect">Motor de Reconocimiento de Letra</label>
+                <select id="scannerEngineSelect" class="sl-select">
+                  <option value="auto" selected>Neuronal PP-OCRv5 Español (Local Offline)</option>
+                  <option value="vision_ai">Visión IA Manuscritos Cursivos (Gemini Key)</option>
+                </select>
+              </div>
+              <div id="scannerVisionKeyField" class="sl-field is-hidden">
+                <label class="sl-label" for="scannerVisionKeyInput">Clave Gemini API (Google AI Studio)</label>
+                <input id="scannerVisionKeyInput" type="password" class="sl-input" placeholder="AIza... (se guarda solo en tu navegador)" autocomplete="off">
+              </div>
+            </div>
+
             <div class="scanner-options-row">
               <label class="scanner-checkbox">
                 <input id="scannerDetectDrawingCheck" type="checkbox" checked>
-                <span>Detectar y extraer dibujos automáticamente</span>
+                <span>Detectar y separar dibujos automáticamente</span>
               </label>
               <button type="button" id="btnScannerRunOcr" class="sl-btn sl-btn--sm sl-btn--lime" disabled>
-                Analizar Carta (Texto + Dibujo)
+                Re-analizar Carta
               </button>
             </div>
             <div id="scannerStatusBar" class="scanner-status-bar">
-              Seleccioná o fotografiá una carta para comenzar el reconocimiento.
+              Elegí o sacá una foto de tu carta para reconocer la letra y los dibujos.
             </div>
           </div>
 
           <!-- Vista previa de la foto + recorte manual de dibujo -->
           <div id="scannerPreviewCard" class="sl-card scanner-preview-card is-hidden">
             <div class="studio-section-head" style="margin-bottom: 6px;">
-              <span class="sl-label">Vista de la Carta (arrastrá para recortar un dibujo)</span>
+              <span class="sl-label">Foto Cargada (arrastrá sobre un dibujo para recortarlo)</span>
               <button type="button" id="btnScannerExtractManualCrop" class="sl-btn sl-btn--sm sl-btn--cornflower is-hidden">
                 Extraer Recorte Seleccionado
               </button>
@@ -951,7 +990,7 @@
               <div id="scannerCropBox" class="scanner-crop-box is-hidden"></div>
             </div>
             <p class="sl-muted" style="font-size: 11px; margin: 6px 0 0;">
-              Tip: si la carta tiene un dibujo pequeño o una firma dibujada, arrastrá un recuadro sobre esa zona y tocá <strong>Extraer Recorte Seleccionado</strong>.
+              Tip: arrastrá un recuadro sobre cualquier dibujo, flor o firma manuscrita y tocá <strong>Extraer Recorte Seleccionado</strong>.
             </p>
           </div>
         </div>
@@ -977,7 +1016,7 @@
 
             <div class="sl-field">
               <label class="sl-label" for="scannerResultText">Versos / Texto de la Carta (podés corregir antes de pasar a la hoja)</label>
-              <textarea id="scannerResultText" class="sl-textarea" rows="10" placeholder="Acá aparecerá el texto reconocido de tu carta en papel, listo para revisar y pasar a la hoja del libro..."></textarea>
+              <textarea id="scannerResultText" class="sl-textarea" rows="11" placeholder="Acá aparecerá el texto reconocido de tu carta en papel, respetando renglones y estrofas..."></textarea>
             </div>
           </div>
 
@@ -992,7 +1031,7 @@
             </div>
 
             <div id="scannerDrawingEmpty" class="scanner-drawing-empty">
-              Todavía no se extrajo ningún dibujo. Al analizar la carta se buscarán trazos automáticamente, o podés marcar un recuadro manual sobre la foto.
+              Todavía no se extrajo ningún dibujo. Al analizar la carta se separan los trazos no textuales automáticamente, o podés marcar un recuadro sobre la foto.
             </div>
 
             <div id="scannerDrawingReady" class="scanner-drawing-ready is-hidden">

@@ -5,11 +5,10 @@ El proyecto completo correspondiente a las **Fases 1 a 5 + Identidad "Editorial 
 ## Novedades recientes
 - **Marca y Logo "Editorial Personal" (`public/img/editorial-personal-logo.png`, `src/views/index.ejs`, `src/services/pdfService.js`):**
   - Emblema limpio en la barra superior, título editorial y metadatos de los PDFs generados.
-- **Escáner de Cartas en Papel (`src/services/paperScannerService.js`, `public/js/paperScannerModal.js`, `POST /api/scan/letter`, `POST /api/scan/extract-drawing`):**
-  - Botón **Escanear Carta** en la barra superior y en el lienzo del Estudio.
-  - Acepta foto/escaneo (JPG/PNG/WebP), cámara del celular (`capture="environment"`) y cámara en vivo.
-  - Reconoce el texto en español con `tesseract.js` (modelo `spa.traineddata` cacheado localmente en `storage/ocr/`), separa automáticamente **Título**, **Versos/Texto** y **Firma** editables.
-  - Detecta y extrae automáticamente dibujos hechos a mano en la carta a **300 DPI en tinta B&N**, e incluye recorte manual arrastrando un recuadro sobre cualquier dibujo o firma de la foto para pasarlo directo a la página actual o a una nueva página.
+- **Escáner de Cartas en Papel v2 (`src/services/paperScannerService.js`, `public/js/paperScannerModal.js`, `POST /api/scan/letter`, `POST /api/scan/extract-drawing`):**
+  - Pestañas separadas no bloqueantes (**1. Subir Foto / Archivo** con soporte `Ctrl+V` | **2. Cámara en Vivo** con selector de dispositivo, espejado y timeout seguro anti-bloqueo).
+  - **Motor Neuronal `PaddleOCR PP-OCRv5` Español/Latín (`onnxruntime-web` WASM 100% offline)** en `storage/ocr/` + **nivelación adaptativa de sombras del papel** (elimina sombras de cámara, hojas amarillentas y renglones) + modo opcional **Visión IA Manuscritos Cursivos (`Gemini API Key`)**.
+  - Separa automáticamente **Título**, **Versos/Estrofas** y **Firma**, y extrae dibujos hechos a mano a **300 DPI en tinta B&N** (automático o con recorte manual sobre la foto).
 
 ## Novedades de Fase 5 — Exportación PDF 1:1 Cero-Configuración
 - **Exportación PDF 1:1 para Imprenta (`src/services/pdfService.js`, `GET /api/books/:id/export/press.pdf`):**

@@ -18,7 +18,7 @@ function trackAssetUrl(url) {
   }
 }
 
-describe('Editorial Personal — Logo de Marca y Escáner de Cartas en Papel (OCR + Dibujos)', () => {
+describe('Editorial Personal — Logo, Pestañas de Cámara No Bloqueantes y Motor Neuronal PP-OCRv5', () => {
   before(async () => {
     server = http.createServer(app);
     await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -36,7 +36,7 @@ describe('Editorial Personal — Logo de Marca y Escáner de Cartas en Papel (OC
     }
   });
 
-  it('sirve la marca "Editorial Personal" y el logo limpio PNG en /img/editorial-personal-logo.png', async () => {
+  it('sirve la marca "Editorial Personal", el logo PNG y el modal desplazable con pestañas separadas Archivo/Cámara', async () => {
     const htmlRes = await fetch(`${baseUrl}/`);
     assert.equal(htmlRes.status, 200);
     const html = await htmlRes.text();
@@ -45,7 +45,11 @@ describe('Editorial Personal — Logo de Marca y Escáner de Cartas en Papel (OC
       html.includes('/img/editorial-personal-logo.png'),
       'Debe referenciar el logo /img/editorial-personal-logo.png'
     );
-    assert.ok(html.includes('btnOpenPaperScanner'), 'Debe incluir el botón Escanear Carta');
+    assert.ok(
+      html.includes('sl-modal-dialog scanner-modal-card'),
+      'El modal del escáner debe usar sl-modal-dialog con scroll y fondo crema'
+    );
+    assert.ok(html.includes('scannerTabBtnUpload') && html.includes('scannerTabBtnCamera'));
 
     const imgRes = await fetch(`${baseUrl}/img/editorial-personal-logo.png`);
     assert.equal(imgRes.status, 200);
@@ -65,25 +69,41 @@ describe('Editorial Personal — Logo de Marca y Escáner de Cartas en Papel (OC
     assert.equal(res.status, 400);
   });
 
-  it('escanea una carta en papel reconociendo texto en español y extrayendo el dibujo automáticamente + recorte manual', async () => {
-    const letterSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1100">
-      <rect width="900" height="1100" fill="#ffffff"/>
-      <text x="90" y="130" font-family="serif" font-size="44" fill="#111111">Carta de Octubre</text>
-      <text x="90" y="235" font-family="serif" font-size="34" fill="#111111">Bajo el arbol azul crecen las raices</text>
-      <text x="90" y="295" font-family="serif" font-size="34" fill="#111111">de cada palabra escrita a mano.</text>
-      <text x="90" y="390" font-family="serif" font-size="30" fill="#111111">— Con amor</text>
-      <circle cx="450" cy="760" r="145" fill="none" stroke="#000000" stroke-width="9"/>
-      <path d="M365 735 Q450 630 535 735 Q450 855 365 735 Z" fill="none" stroke="#000000" stroke-width="7"/>
-      <path d="M450 615 L450 905 M305 760 L595 760" stroke="#000000" stroke-width="5"/>
+  it('reconoce con PP-OCRv5 una carta inclinada, con sombra y renglones en español (ñ, tildes, ¿) y separa el dibujo a 300 DPI', async () => {
+    // Tough realistic letter: dark desk background, -2.5° tilted paper, diagonal shadow, ruled blue lines, italic serif + Spanish accents + hand-drawn emblem
+    const shadowedLetterSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1220">
+      <defs>
+        <linearGradient id="paperShadow" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#f5f0e5"/>
+          <stop offset="55%" stop-color="#d4cdb9"/>
+          <stop offset="100%" stop-color="#8f8878"/>
+        </linearGradient>
+      </defs>
+      <rect width="1000" height="1220" fill="#2c2927"/>
+      <g transform="translate(55,45) rotate(-2.2, 440, 560)">
+        <rect width="890" height="1120" fill="url(#paperShadow)"/>
+        <line x1="45" y1="160" x2="845" y2="160" stroke="#a9bed6" stroke-width="1.5"/>
+        <line x1="45" y1="255" x2="845" y2="255" stroke="#a9bed6" stroke-width="1.5"/>
+        <line x1="45" y1="325" x2="845" y2="325" stroke="#a9bed6" stroke-width="1.5"/>
+        <line x1="45" y1="395" x2="845" y2="395" stroke="#a9bed6" stroke-width="1.5"/>
+        <line x1="45" y1="490" x2="845" y2="490" stroke="#a9bed6" stroke-width="1.5"/>
+        <text x="80" y="148" font-family="serif" font-style="italic" font-size="44" fill="#232b3d">Carta de Otoño</text>
+        <text x="80" y="245" font-family="serif" font-style="italic" font-size="34" fill="#232b3d">¿Cuántos sueños caben en un pequeño papel?</text>
+        <text x="80" y="315" font-family="serif" font-style="italic" font-size="34" fill="#232b3d">Mañana volverán los pájaros al jardín</text>
+        <text x="80" y="385" font-family="serif" font-style="italic" font-size="34" fill="#232b3d">donde escribimos nuestra canción.</text>
+        <text x="80" y="480" font-family="serif" font-style="italic" font-size="30" fill="#232b3d">— Con cariño, Sofía</text>
+        <circle cx="445" cy="805" r="135" fill="none" stroke="#1e222b" stroke-width="8"/>
+        <path d="M365 785 Q445 680 525 785 Q445 895 365 785 Z" fill="none" stroke="#1e222b" stroke-width="6"/>
+        <path d="M445 670 L445 940 M310 805 L580 805" stroke="#1e222b" stroke-width="5"/>
+      </g>
     </svg>`;
 
-    const pngBuf = await sharp(Buffer.from(letterSvg)).png().toBuffer();
+    const jpegBuf = await sharp(Buffer.from(shadowedLetterSvg)).jpeg({ quality: 84 }).toBuffer();
 
-    // 1) Full scan: Spanish OCR + automatic drawing detection
     const scanForm = new FormData();
-    scanForm.append('image', new Blob([pngBuf], { type: 'image/png' }), 'carta-prueba.png');
+    scanForm.append('image', new Blob([jpegBuf], { type: 'image/jpeg' }), 'carta-sombra.jpg');
     scanForm.append('lang', 'spa');
-    scanForm.append('enhanceMode', 'standard');
+    scanForm.append('enhanceMode', 'shadow');
     scanForm.append('detectDrawing', 'true');
     scanForm.append('drawingMode', 'ink');
 
@@ -91,28 +111,28 @@ describe('Editorial Personal — Logo de Marca y Escáner de Cartas en Papel (OC
     assert.equal(scanRes.status, 200);
     const scanData = await scanRes.json();
     assert.equal(scanData.ok, true);
-    assert.ok(scanData.ocr.confidence >= 60, `Confianza OCR inesperadamente baja: ${scanData.ocr.confidence}`);
-    assert.ok(
-      scanData.ocr.fullText.toLowerCase().includes('octubre'),
-      `Debe reconocer el título: ${scanData.ocr.fullText}`
-    );
-    assert.ok(
-      scanData.ocr.fullText.toLowerCase().includes('palabra'),
-      `Debe reconocer los versos: ${scanData.ocr.fullText}`
-    );
-    assert.equal(scanData.drawing.detected, true, 'Debe detectar automáticamente el dibujo inferior');
-    assert.ok(scanData.drawing.asset?.url?.startsWith('/storage/engravings/'), 'Debe guardar el dibujo en /storage/engravings/');
+    assert.equal(scanData.ocr.engine, 'pp-ocrv5-neural');
+    assert.ok(scanData.ocr.confidence >= 80, `Confianza baja: ${scanData.ocr.confidence}`);
+
+    const lower = scanData.ocr.fullText.toLowerCase();
+    assert.ok(lower.includes('otoño'), `Debe reconocer "Otoño" con ñ: ${scanData.ocr.fullText}`);
+    assert.ok(lower.includes('sueños') && lower.includes('pequeño'), `Debe reconocer ñ múltiples: ${scanData.ocr.fullText}`);
+    assert.ok(lower.includes('canción'), `Debe reconocer tildes: ${scanData.ocr.fullText}`);
+    assert.ok(!/\n[Oo0]$/m.test(scanData.ocr.fullText.trim()), `No debe alucinar "O" por el círculo dibujado: ${scanData.ocr.fullText}`);
+
+    assert.equal(scanData.drawing.detected, true, 'Debe separar automáticamente el dibujo incluso con sombra en el papel');
+    assert.ok(scanData.drawing.asset?.url?.startsWith('/storage/engravings/'));
     assert.equal(scanData.drawing.asset.dpi, 300);
     trackAssetUrl(scanData.drawing.asset.url);
 
-    // 2) Manual crop extraction
+    // Manual crop extraction with illumination leveling
     const cropForm = new FormData();
-    cropForm.append('image', new Blob([pngBuf], { type: 'image/png' }), 'carta-prueba.png');
+    cropForm.append('image', new Blob([jpegBuf], { type: 'image/jpeg' }), 'carta-sombra.jpg');
     cropForm.append('xPct', '30');
-    cropForm.append('yPct', '54');
+    cropForm.append('yPct', '55');
     cropForm.append('widthPct', '40');
     cropForm.append('heightPct', '32');
-    cropForm.append('mode', 'engraving');
+    cropForm.append('mode', 'ink');
 
     const cropRes = await fetch(`${baseUrl}/api/scan/extract-drawing`, { method: 'POST', body: cropForm });
     assert.equal(cropRes.status, 200);

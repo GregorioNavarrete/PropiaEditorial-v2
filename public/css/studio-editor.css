@@ -1782,14 +1782,62 @@
   padding: 10px;
 }
 
-.scanner-webcam-video {
+.scanner-camera-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.scanner-cam-select {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 8px;
+  font-size: 11.5px;
+}
+
+.scanner-video-box {
+  position: relative;
   width: 100%;
-  max-height: 240px;
+  min-height: 190px;
+  max-height: 260px;
   background-color: var(--color-press-black);
   border-radius: var(--radius-buttons);
   border: var(--border-ink);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scanner-webcam-video {
+  width: 100%;
+  max-height: 260px;
   display: block;
-  object-fit: cover;
+  object-fit: contain;
+}
+
+.scanner-webcam-video.is-mirrored {
+  transform: scaleX(-1);
+}
+
+.scanner-camera-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(249, 249, 247, 0.94);
+  color: var(--color-press-black);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 14px;
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+.scanner-camera-overlay.is-hidden {
+  display: none;
 }
 
 .scanner-options-card {

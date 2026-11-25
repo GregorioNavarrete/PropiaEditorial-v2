@@ -415,7 +415,7 @@ router.post('/art/online-import', asyncHandler(async (req, res) => {
   return res.json({ ok: true, asset });
 }));
 
-// Paper letter scanner (OCR text + automatic drawing extraction)
+// Paper letter scanner (Neural PP-OCRv5 + optional Vision HTR + automatic drawing extraction)
 router.post(
   '/scan/letter',
   uploadSingleImage,
@@ -426,6 +426,8 @@ router.post(
       enhanceMode = 'standard',
       detectDrawing = 'true',
       drawingMode = 'ink',
+      ocrEngine = 'auto',
+      visionApiKey = '',
       widthPx,
       heightPx
     } = req.body || {};
@@ -436,18 +438,28 @@ router.post(
       detectDrawing === '1' ||
       detectDrawing === 'on';
 
-    const result = await scanPaperLetter({
-      buffer: req.file.buffer,
-      lang: typeof lang === 'string' ? lang : 'spa',
-      enhanceMode: typeof enhanceMode === 'string' ? enhanceMode : 'standard',
-      detectDrawing: shouldDetect,
-      drawingMode: typeof drawingMode === 'string' ? drawingMode : 'ink',
-      widthPx: Number(widthPx) || 640,
-      heightPx: Number(heightPx) || 640,
-      outputDir: ENGRAVINGS_OUTPUT_DIR
-    });
+    try {
+      const result = await scanPaperLetter({
+        buffer: req.file.buffer,
+        lang: typeof lang === 'string' ? lang : 'spa',
+        enhanceMode: typeof enhanceMode === 'string' ? enhanceMode : 'standard',
+        detectDrawing: shouldDetect,
+        drawingMode: typeof drawingMode === 'string' ? drawingMode : 'ink',
+        ocrEngine: typeof ocrEngine === 'string' ? ocrEngine : 'auto',
+        visionApiKey: typeof visionApiKey === 'string' ? visionApiKey : '',
+        widthPx: Number(widthPx) || 640,
+        heightPx: Number(heightPx) || 640,
+        outputDir: ENGRAVINGS_OUTPUT_DIR
+      });
 
-    res.json({ ok: true, ...result });
+      return res.json({ ok: true, ...result });
+    } catch (err) {
+      const status = Number(err?.statusCode) || 500;
+      return res.status(status).json({
+        ok: false,
+        error: err?.message || 'Error al analizar la carta.'
+      });
+    }
   })
 );
 
