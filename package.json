@@ -1,0 +1,23 @@
+{
+  "name": "switch-lit-poetry-press",
+  "version": "1.0.0",
+  "description": "Estudio editorial de poemarios ilustrados en tinta B&N e imposición lista para imprenta (Switch-Lit Press)",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test tests/*.test.js",
+    "qa:switch-lit": "node scripts/qa-switch-lit.mjs",
+    "qa": "node scripts/qa-all.mjs"
+  },
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1",
+    "pdfkit": "^0.15.2",
+    "sharp": "^0.35.5",
+    "svg-to-pdfkit": "^0.1.8",
+    "tesseract.js": "^7.0.0"
+  }
+}

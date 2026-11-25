@@ -1,0 +1,162 @@
+/* ==========================================================================
+   Switch-Lit Editorial Design System — Design Tokens & Base Typography
+   100% Offline Vanilla CSS · Inked Grid on Manuscript Cream
+   ========================================================================== */
+
+:root {
+  /* Core Surfaces & Structural Ink */
+  --color-manuscript-cream: #f9f9f7;
+  --color-press-black: #000000;
+  --color-sage-border: #d2ddd2;
+  --color-mist-green: #dee5dd;
+  --color-paper-shadow: #edf0e9;
+  --color-smoke: #c7c7c6;
+
+  /* Editorial Marker Accents (always paired with #000000 text & 1px border) */
+  --color-highlighter-lime: #edfe5e;
+  --color-cornflower-wash: #bed4fb;
+  --color-spring-green: #31e992;
+
+  /* Physical Simulated Trim Sheet Paper */
+  --color-sheet-paper: #ffffff;
+  --color-ink-muted: #3d3d3b;
+
+  /* Strict Geometric Radii */
+  --radius-cards: 12px;
+  --radius-pills: 24px;
+  --radius-buttons: 6px;
+  --radius-inputs: 6px;
+  --radius-small: 3px;
+
+  /* Structural Borders */
+  --border-ink: 1px solid var(--color-press-black);
+  --border-sage: 1px solid var(--color-sage-border);
+  --border-mist: 1px solid var(--color-mist-green);
+
+  /* Optional subtle shadow exclusively for active button press */
+  --shadow-sm: rgba(0, 0, 0, 0.2) 0px 2px 6px 0px;
+
+  /* 3-Voice Switch-Lit Typography (100% Offline Editorial Stacks) */
+  --font-abccameraheavy: 'Arial Narrow', 'Impact', 'Haettenschweiler', system-ui, sans-serif;
+  --font-abcarizonaflare: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  --font-abcarizonasans: 'Inter', 'Helvetica Neue', Arial, system-ui, sans-serif;
+  --font-abcarizonamixvariable: 'Inter', 'Helvetica Neue', Arial, system-ui, sans-serif;
+
+  /* 4 Poem Editorial Voices for Physical Book Canvas */
+  --font-poem-italic: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  --font-poem-classic: 'Baskerville', 'Garamond', 'Palatino Linotype', 'Times New Roman', Georgia, serif;
+  --font-poem-sans: 'Inter', 'Optima', 'Helvetica Neue', Arial, system-ui, sans-serif;
+  --font-poem-mono: 'Courier New', 'Nimbus Mono PS', 'Liberation Mono', monospace;
+  --font-poem-signature: 'Snell Roundhand', 'Apple Chancery', 'URW Chancery L', 'Palatino Linotype', Georgia, serif;
+
+  /* Type Scale & Line Heights */
+  --text-display: 68px;
+  --leading-display: 0.74;
+  --text-section-xl: 44px;
+  --text-section: 28px;
+  --text-card-title: 19px;
+  --text-body: 14px;
+  --text-sm: 12.5px;
+  --text-xs: 11px;
+
+  /* Positive Editorial Tracking */
+  --tracking-tight: -0.015em;
+  --tracking-body: 0.033em;
+  --tracking-ui: 0.048em;
+  --tracking-caps: 0.067em;
+
+  /* Layout Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  background-color: var(--color-manuscript-cream);
+  color: var(--color-press-black);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--color-manuscript-cream);
+  color: var(--color-press-black);
+  font-family: var(--font-abcarizonasans);
+  font-size: var(--text-body);
+  line-height: 1.5;
+  letter-spacing: var(--tracking-body);
+  display: flex;
+  flex-direction: column;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin-top: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  color: var(--color-press-black);
+}
+
+a {
+  color: var(--color-press-black);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+/* Poem Typography Utility Classes (Shared by Editor & Sheet Preview) */
+.font-serif-italic {
+  font-family: var(--font-poem-italic);
+  font-style: italic;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+}
+
+.font-serif-classic {
+  font-family: var(--font-poem-classic);
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.font-sans-clean {
+  font-family: var(--font-poem-sans);
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+.font-mono-zine {
+  font-family: var(--font-poem-mono);
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.font-signature {
+  font-family: var(--font-poem-signature);
+  font-style: italic;
+  font-weight: 500;
+}

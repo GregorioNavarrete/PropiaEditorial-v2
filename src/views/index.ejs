@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof appTitle !== 'undefined' ? appTitle : (typeof pageTitle !== 'undefined' ? pageTitle : 'Editorial Personal — Estudio de Poemarios en Tinta') %></title>
+  <link rel="stylesheet" href="/css/switch-lit-tokens.css">
+  <link rel="stylesheet" href="/css/switch-lit-components.css">
+  <link rel="stylesheet" href="/css/studio-editor.css">
+</head>
+<body>
+
+  <!-- BARRA SUPERIOR EDITORIAL -->
+  <header class="sl-topbar" role="banner">
+    <div class="sl-topbar__inner">
+      <div class="sl-brand-group">
+        <button type="button" id="btnBrandHome" class="sl-brand" title="Volver a la Biblioteca de Libros">
+          <img src="/img/editorial-personal-logo.png" alt="Logo Editorial Personal" class="sl-brand__logo" width="40" height="40">
+          <span class="sl-brand__text">
+            <span class="sl-brand__title">Editorial Personal</span>
+            <span class="sl-brand__sub">Edición Artesanal en Tinta &amp; Papel</span>
+          </span>
+        </button>
+
+        <div class="sl-book-indicator" title="Poemario activo en edición">
+          <span class="sl-book-indicator__label">Libro:</span>
+          <select id="activeBookSelect" class="sl-book-indicator__select" aria-label="Seleccionar poemario activo">
+            <option value="">Cargando biblioteca...</option>
+          </select>
+        </div>
+
+        <div id="saveStatusPill" class="sl-save-pill" role="status" aria-live="polite">
+          <span class="sl-save-pill__dot" aria-hidden="true"></span>
+          <span id="saveStatusText">GUARDADO EN DISCO</span>
+        </div>
+      </div>
+
+      <nav class="sl-nav" aria-label="Navegación principal del estudio editorial">
+        <button type="button" id="navTabLibrary" class="sl-nav-tab is-active" data-view="library">
+          1. Biblioteca de Libros
+        </button>
+        <button type="button" id="navTabStudio" class="sl-nav-tab" data-view="studio">
+          2. Estudio &amp; Páginas
+        </button>
+        <button type="button" id="btnOpenQuickPoem" class="sl-nav-cta">
+          + Ingreso Rápido de Poema
+        </button>
+        <button type="button" id="btnOpenPaperScanner" class="sl-btn sl-btn--sm sl-btn--cornflower" title="Escanear carta o poema escrito en papel (reconoce texto y dibujos)">
+          Escanear Carta
+        </button>
+        <button type="button" id="navTabFormats" class="sl-nav-tab" data-view="formats">
+          3. Formato &amp; Pliegos
+        </button>
+        <a id="btnTopbarExportPressPdf" href="#" download class="sl-btn sl-btn--sm sl-btn--lime" title="Descargar PDF vectorial 1:1 del libro activo">
+          ↓ PDF Imprenta 1:1
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- CONTENEDOR PRINCIPAL DE VISTAS -->
+  <main class="sl-main">
+    <div class="sl-shell">
+
+      <!-- ==================================================================
+           VISTA 1: BIBLIOTECA MULTI-PROYECTO (FASE 1)
+           ================================================================== -->
+      <section id="viewLibrary" class="sl-view" aria-labelledby="heroMainTitle">
+        <div class="library-hero">
+          <div>
+            <span class="sl-eyebrow">Imprenta Poética Multi-Formato · 300 DPI · Blanco &amp; Negro</span>
+            <h1 id="heroMainTitle" class="sl-hero-display">POEMARIOS EN TINTA SOBRE PAPEL CREMA</h1>
+            <p class="library-hero__lead">
+              Diseñá cuadernillos cosidos, mini-libros de bolsillo, fanzines de una sola hoja o ediciones a medida en milímetros, con grabados en tinta sugeridos por tus propios versos.
+            </p>
+          </div>
+
+          <div class="library-hero__aside">
+            <div class="sl-accent-card sl-accent-card--cornflower">
+              <span class="sl-eyebrow">Colección Guardada en Disco JSON</span>
+              <p id="librarySummaryText" style="margin: 6px 0 10px; font-size: 13px;">
+                Tus libros se guardan automáticamente con escritura atómica local sin perder ningún verso.
+              </p>
+              <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                <button type="button" id="btnOpenActiveInStudio" class="sl-btn sl-btn--primary">
+                  Abrir Libro Activo en Estudio →
+                </button>
+                <button type="button" id="btnRestoreSeedBook" class="sl-btn">
+                  Restaurar Ejemplo Inicial
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="library-workspace">
+          <!-- Grilla de Libros Guardados -->
+          <div>
+            <div class="library-toolbar">
+              <div>
+                <h2 class="sl-section-heading">Tus Poemarios</h2>
+                <p class="sl-muted" style="margin: 0;">Abrí cualquier edición en el Estudio, duplicala para probar otro formato o creá un proyecto nuevo.</p>
+              </div>
+              <span id="libraryCountBadge" class="sl-pill sl-pill--lime">1 libro</span>
+            </div>
+
+            <div id="booksGridContainer" class="library-books-grid" aria-live="polite">
+              <!-- Tarjetas de libros renderizadas por app.js -->
+            </div>
+          </div>
+
+          <!-- Formulario: Crear Nuevo Poemario -->
+          <aside class="sl-card" aria-labelledby="newBookFormHeading">
+            <span class="sl-eyebrow">Nueva Edición</span>
+            <h2 id="newBookFormHeading" class="sl-section-heading" style="margin-top: 4px;">Crear Nuevo Poemario</h2>
+            <p class="sl-muted" style="margin-bottom: 14px;">
+              Elegí el papel de impresión y el formato físico cerrado. Podés cambiarlo en cualquier momento dentro del Estudio.
+            </p>
+
+            <form id="createBookForm" class="new-book-form">
+              <div class="sl-field">
+                <label class="sl-label" for="newBookTitle">Título del Poemario</label>
+                <input id="newBookTitle" name="title" type="text" class="sl-input" placeholder="Ej. Cartas para después de la lluvia" required maxlength="120">
+              </div>
+
+              <div class="two-col-fields">
+                <div class="sl-field">
+                  <label class="sl-label" for="newBookAuthor">Autor / Firma</label>
+                  <input id="newBookAuthor" name="author" type="text" class="sl-input" placeholder="Ej. Grego" maxlength="80">
+                </div>
+                <div class="sl-field">
+                  <label class="sl-label" for="newBookSubtitle">Subtítulo / Colección</label>
+                  <input id="newBookSubtitle" name="subtitle" type="text" class="sl-input" placeholder="Ej. Edición artesanal" maxlength="120">
+                </div>
+              </div>
+
+              <div class="two-col-fields">
+                <div class="sl-field">
+                  <label class="sl-label" for="newBookPaper">Tamaño de Hoja Madre</label>
+                  <select id="newBookPaper" name="paperId" class="sl-select">
+                    <option value="A4">Hoja A4 (210 × 297 mm)</option>
+                    <option value="LETTER">Hoja Carta / Letter (215.9 × 279.4 mm)</option>
+                    <option value="A3">Hoja A3 (297 × 420 mm)</option>
+                  </select>
+                </div>
+                <div class="sl-field">
+                  <label class="sl-label" for="newBookPageCount">Páginas Iniciales</label>
+                  <select id="newBookPageCount" name="pageCount" class="sl-select">
+                    <option value="8" selected>8 páginas (Clásico)</option>
+                    <option value="12">12 páginas</option>
+                    <option value="16">16 páginas (Poemario amplio)</option>
+                    <option value="24">24 páginas</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="sl-field">
+                <label class="sl-label" for="newBookFormat">Formato Físico del Libro</label>
+                <select id="newBookFormat" name="formatId" class="sl-select">
+                  <option value="saddle_half">Cuadernillo 1/2 Hoja (Doblado al medio · Tipo A5)</option>
+                  <option value="pocket_quarter">Mini-Libro Bolsillo 1/4 Hoja (Muy chico · Tipo A6)</option>
+                  <option value="single_sheet_zine">Fanzine 1 Sola Hoja (8 págs con 1 corte central)</option>
+                  <option value="custom_nup">Personalizado mm × mm (Medida exacta del usuario)</option>
+                </select>
+              </div>
+
+              <div id="newBookCustomDimensionsWrap" class="custom-mm-row is-hidden">
+                <div class="sl-field">
+                  <label class="sl-label" for="newBookCustomWidth">Ancho Cerrado (mm)</label>
+                  <input id="newBookCustomWidth" name="customWidthMm" type="number" min="45" max="400" step="0.5" value="105" class="sl-input">
+                </div>
+                <div class="sl-field">
+                  <label class="sl-label" for="newBookCustomHeight">Alto Cerrado (mm)</label>
+                  <input id="newBookCustomHeight" name="customHeightMm" type="number" min="60" max="410" step="0.5" value="148" class="sl-input">
+                </div>
+              </div>
+
+              <div id="newBookGeometryPreview" class="sl-card--paper" style="padding: 10px 12px; border: var(--border-ink); border-radius: var(--radius-buttons); font-size: 11.5px;">
+                <!-- Resumen físico en vivo antes de crear -->
+              </div>
+
+              <button type="submit" id="btnSubmitCreateBook" class="sl-btn sl-btn--lime sl-btn--block" style="padding: 10px 14px; font-size: 13px;">
+                + Crear Poemario y Abrir en Estudio
+              </button>
+            </form>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ==================================================================
+           VISTA 2: ESTUDIO EDITORIAL DE POEMAS + ARTE 300 DPI (FASES 2 Y 3)
+           ================================================================== -->
+      <section id="viewStudio" class="sl-view is-hidden" aria-label="Estudio Editorial de Poemas e Ilustraciones">
+        <div class="studio-grid">
+
+          <!-- COLUMNA IZQUIERDA: ESTRUCTURA, FORMATO, PLANTILLAS Y MEDIDAS RECOMENDADAS -->
+          <aside class="studio-col" aria-label="Estructura, formato y tipografía">
+
+            <!-- Tarjeta 1: Datos del Libro y Selector Rápido de Formato/Papel -->
+            <div class="sl-card">
+              <div class="studio-section-head">
+                <span class="sl-eyebrow">1. Libro &amp; Formato Físico</span>
+                <button type="button" id="btnQuickJumpFormats" class="sl-btn sl-btn--sm" title="Ver plano completo del pliego">
+                  Ver Pliego →
+                </button>
+              </div>
+
+              <div class="two-col-fields" style="margin-bottom: 8px;">
+                <div class="sl-field">
+                  <label class="sl-label" for="studioBookTitleInput">Título del Libro</label>
+                  <input id="studioBookTitleInput" type="text" class="sl-input" maxlength="120">
+                </div>
+                <div class="sl-field">
+                  <label class="sl-label" for="studioBookAuthorInput">Autor / Firma</label>
+                  <input id="studioBookAuthorInput" type="text" class="sl-input" maxlength="80">
+                </div>
+              </div>
+
+              <div class="two-col-fields">
+                <div class="sl-field">
+                  <label class="sl-label" for="studioPaperSelect">Hoja Madre</label>
+                  <select id="studioPaperSelect" class="sl-select">
+                    <option value="A4">Hoja A4</option>
+                    <option value="LETTER">Hoja Carta</option>
+                    <option value="A3">Hoja A3</option>
+                  </select>
+                </div>
+                <div class="sl-field">
+                  <label class="sl-label" for="studioFormatSelect">Formato Libro</label>
+                  <select id="studioFormatSelect" class="sl-select">
+                    <option value="saddle_half">Cuadernillo 1/2 (A5)</option>
+                    <option value="pocket_quarter">Bolsillo 1/4 (A6)</option>
+                    <option value="single_sheet_zine">Fanzine 1 Hoja</option>
+                    <option value="custom_nup">Personalizado mm</option>
+                  </select>
+                </div>
+              </div>
+
+              <div id="studioCustomMmWrap" class="custom-mm-row is-hidden" style="margin-top: 8px;">
+                <div class="sl-field">
+                  <label class="sl-label" for="studioCustomWidthInput">Ancho (mm)</label>
+                  <input id="studioCustomWidthInput" type="number" min="45" max="400" step="0.5" class="sl-input">
+                </div>
+                <div class="sl-field">
+                  <label class="sl-label" for="studioCustomHeightInput">Alto (mm)</label>
+                  <input id="studioCustomHeightInput" type="number" min="60" max="410" step="0.5" class="sl-input">
+                </div>
+              </div>
+            </div>
+
+            <!-- Tarjeta 2: Grilla Dinámica de Páginas (1..N) y Múltiplo de Encuadernación -->
+            <div class="sl-card">
+              <div class="studio-section-head">
+                <span class="sl-eyebrow">2. Páginas del Poemario</span>
+                <span id="pagesCountBadge" class="sl-pill sl-pill--mist">8 págs.</span>
+              </div>
+
+              <div id="pagesMatrixContainer" class="pages-matrix" role="listbox" aria-label="Páginas del libro">
+                <!-- Botones 1..N -->
+              </div>
+
+              <div class="sl-field" style="margin-top: 8px;">
+                <label class="sl-label" for="pageRoleInput">Etiqueta / Rol de esta Página</label>
+                <input id="pageRoleInput" type="text" class="sl-input" maxlength="90" placeholder="Ej. Página 3 (Poema de apertura)">
+              </div>
+
+              <div class="page-ops-bar">
+                <button type="button" id="btnAddSinglePage" class="sl-btn sl-btn--sm sl-btn--lime">+ Página</button>
+                <button type="button" id="btnAddSpreadPages" class="sl-btn sl-btn--sm">+ Pliego (+4)</button>
+                <button type="button" id="btnMovePageUp" class="sl-btn sl-btn--sm" title="Mover página antes">↑ Subir</button>
+                <button type="button" id="btnMovePageDown" class="sl-btn sl-btn--sm" title="Mover página después">↓ Bajar</button>
+                <button type="button" id="btnDeletePage" class="sl-btn sl-btn--sm" title="Eliminar página actual">Eliminar</button>
+              </div>
+
+              <div id="bindingMultipleIndicator" class="binding-status-strip">
+                <!-- Estado de múltiplo óptimo (4 u 8 págs) -->
+              </div>
+            </div>
+
+            <!-- Tarjeta 3: 10 Plantillas Editoriales + 4 Tipografías + Firma -->
+            <div class="sl-card">
+              <div class="studio-section-head">
+                <span class="sl-eyebrow">3. Plantilla &amp; Tipografía</span>
+              </div>
+
+              <div class="sl-field" style="margin-bottom: 10px;">
+                <label class="sl-label" for="pageLayoutSelect">Diseño Editorial (10 Plantillas)</label>
+                <select id="pageLayoutSelect" class="sl-select">
+                  <!-- Opciones pobladas desde PAGE_LAYOUTS -->
+                </select>
+              </div>
+
+              <div class="sl-field" style="margin-bottom: 10px;">
+                <span class="sl-label">Voz Tipográfica del Poema</span>
+                <div id="poemFontButtonsContainer" class="font-choice-grid">
+                  <!-- 4 botones desde POEM_FONTS -->
+                </div>
+              </div>
+
+              <div class="two-col-fields" style="margin-bottom: 8px;">
+                <div class="sl-field">
+                  <label class="sl-label" for="pageFontSizeSelect">Cuerpo de Letra</label>
+                  <select id="pageFontSizeSelect" class="sl-select">
+                    <!-- Opciones desde FONT_SIZES -->
+                  </select>
+                </div>
+                <div class="sl-field">
+                  <label class="sl-label" for="pageSignatureInput">Firma / Pie</label>
+                  <input id="pageSignatureInput" type="text" class="sl-input" placeholder="Ej. - Grego">
+                </div>
+              </div>
+
+              <div class="sl-field" style="margin-bottom: 8px;">
+                <label class="sl-label" for="pageTitleQuickInput">Título en Página (Portada / Poema)</label>
+                <input id="pageTitleQuickInput" type="text" class="sl-input" placeholder="Opcional en páginas interiores">
+              </div>
+
+              <label style="display: inline-flex; align-items: center; gap: 7px; font-size: 11.5px; cursor: pointer;">
+                <input id="pageShowNumberCheckbox" type="checkbox">
+                <span>Mostrar número de página al pie</span>
+              </label>
+            </div>
+
+            <!-- Tarjeta 4 (DESTACADA SWITCH-LIT #bed4fb): Dimensiones Recomendadas de Imagen @ 300 DPI -->
+            <div class="sl-accent-card sl-accent-card--cornflower" id="recommendedSpecsCard">
+              <span class="sl-eyebrow">Dimensiones Recomendadas de Imagen</span>
+              <h3 class="sl-card-heading" style="margin-top: 3px;" id="specSlotLabel">Hueco de Ilustración</h3>
+              <p id="specPlacementHint" style="font-size: 11.5px; margin: 4px 0 0; line-height: 1.35;"></p>
+
+              <div class="specs-kv-grid">
+                <div class="specs-kv-box">
+                  <span class="specs-kv-box__label">Página Cerrada</span>
+                  <span class="specs-kv-box__val" id="specClosedPageMm">148.5 × 210 mm</span>
+                </div>
+                <div class="specs-kv-box">
+                  <span class="specs-kv-box__label">Hueco Ilustración</span>
+                  <span class="specs-kv-box__val" id="specSlotMm">48 × 58 mm</span>
+                </div>
+                <div class="specs-kv-box">
+                  <span class="specs-kv-box__label">Óptimo a 300 DPI</span>
+                  <span class="specs-kv-box__val" id="specSlotPxDpi">567 × 685 px</span>
+                </div>
+                <div class="specs-kv-box">
+                  <span class="specs-kv-box__label">Proporción</span>
+                  <span class="specs-kv-box__val" id="specAspectRatio">1 : 1.2 (Vertical)</span>
+                </div>
+                <div id="specSecondarySlotBox" class="specs-kv-box specs-kv-box--wide is-hidden">
+                  <span class="specs-kv-box__label">Ornamento Secundario de esta Plantilla</span>
+                  <span class="specs-kv-box__val" id="specSecondarySlotText">—</span>
+                </div>
+                <div class="specs-kv-box specs-kv-box--wide">
+                  <span class="specs-kv-box__label">Capacidad Óptima de Versos</span>
+                  <span class="specs-kv-box__val" id="specVerseCapacity">Máx. 19 líneas · 34 caract./línea</span>
+                </div>
+              </div>
+
+              <!-- Alerta interactiva si el poema actual supera la capacidad -->
+              <div id="studioOverflowAlert" class="poem-overflow-banner is-hidden" role="alert">
+                <div id="studioOverflowMessage" style="font-weight: 600;"></div>
+                <div class="poem-overflow-banner__actions">
+                  <button type="button" id="btnAutoShrinkFont" class="sl-btn sl-btn--sm sl-btn--primary">
+                    Ajustar Letra
+                  </button>
+                  <button type="button" id="btnSplitOverflowPages" class="sl-btn sl-btn--sm">
+                    Dividir en 2 Páginas Enfrentadas
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </aside>
+
+          <!-- COLUMNA CENTRAL: LIENZO INTERACTIVO DE PÁGINA REAL -->
+          <section class="studio-col" aria-label="Lienzo de página en proporción geométrica real">
+            <div class="canvas-stage-card">
+              <div class="canvas-topbar">
+                <div>
+                  <span id="canvasPageBadge" class="sl-eyebrow">Página 1 de 8</span>
+                  <div id="canvasRoleSubtitle" style="font-size: 12px; color: var(--color-ink-muted);">Tapa del Libro</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <button type="button" id="btnPrevPage" class="sl-btn sl-btn--sm">← Página Anterior</button>
+                  <button type="button" id="btnNextPage" class="sl-btn sl-btn--sm">Página Siguiente →</button>
+                </div>
+              </div>
+
+              <div class="canvas-ruler-bar">
+                <span id="canvasPhysicalReadout">148.5 × 210 mm · Cuadernillo 1/2 Hoja sobre A4</span>
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                  <button type="button" id="btnStudioScanLetter" class="sl-btn sl-btn--sm sl-btn--cornflower" title="Fotografiar o subir una carta en papel para pasar texto y dibujos a esta hoja">
+                    Escanear Carta en Papel
+                  </button>
+                  <button type="button" id="btnToggleCanvasScale" class="sl-btn sl-btn--sm" title="Alternar entre tamaño amplio de lectura o escala comparativa">
+                    Vista: Lectura Cómoda
+                  </button>
+                </div>
+              </div>
+
+              <div class="canvas-desk">
+                <div id="singlePageCanvasHost" style="width: 100%; display: flex; justify-content: center;">
+                  <!-- Página interactiva renderizada por pageRenderer.js -->
+                </div>
+              </div>
+
+              <p class="sl-muted" style="margin: 10px 0 0; font-size: 11.5px; text-align: center;">
+                Hacé clic sobre el título, los versos o la firma para escribir. Arrastrá grabados o fotos sobre la hoja blanca para ubicarlos libremente.
+              </p>
+            </div>
+          </section>
+
+          <!-- COLUMNA DERECHA: MOTOR HÍBRIDO DE IMÁGENES RELACIONADAS AL POEMA -->
+          <aside class="studio-col studio-col--art" aria-label="Estudio de ilustraciones y grabados en tinta">
+            <div class="sl-card">
+              <div class="studio-section-head">
+                <div>
+                  <span class="sl-eyebrow">Arte &amp; Grabado B&amp;N</span>
+                  <h2 class="sl-card-heading" style="margin-top: 2px;">Ilustración para tu Poema</h2>
+                </div>
+              </div>
+
+              <!-- 3 Pestañas Switch-Lit -->
+              <div class="art-tabs" role="tablist" aria-label="Fuentes de ilustración">
+                <button type="button" id="artTabSuggested" class="art-tab-btn is-active" role="tab" aria-selected="true" data-art-tab="suggested">
+                  Sugeridas
+                </button>
+                <button type="button" id="artTabUpload" class="art-tab-btn" role="tab" aria-selected="false" data-art-tab="upload">
+                  Subir 300 DPI
+                </button>
+                <button type="button" id="artTabOnline" class="art-tab-btn" role="tab" aria-selected="false" data-art-tab="online">
+                  Online B&amp;N
+                </button>
+              </div>
+
+              <!-- Selector de Hueco Principal vs Secundario (cuando la plantilla tiene 2 grabados) -->
+              <div id="artSlotTargetWrap" class="art-slot-switcher is-hidden">
+                <button type="button" id="btnTargetPrimarySlot" class="sl-btn sl-btn--sm sl-btn--primary">
+                  Ilustración Principal
+                </button>
+                <button type="button" id="btnTargetSecondarySlot" class="sl-btn sl-btn--sm">
+                  Ornamento Secundario
+                </button>
+              </div>
+
+              <!-- TAB A: SUGERIDAS POR TU POEMA (INSTANTÁNEO) + CATÁLOGO DE 40 GRABADOS -->
+              <div id="artPanelSuggested" role="tabpanel">
+                <div>
+                  <span class="sl-label">Temas detectados en tus versos:</span>
+                  <div id="detectedThemesContainer" class="theme-tags-wrap">
+                    <!-- Chips #edfe5e -->
+                  </div>
+                </div>
+
+                <div id="poemLayoutSuggestionBox" class="sl-card--paper" style="padding: 8px 10px; border: var(--border-ink); border-radius: var(--radius-buttons); margin-bottom: 12px; font-size: 11px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                  <span id="poemLayoutSuggestionText">Plantilla sugerida para este poema</span>
+                  <button type="button" id="btnApplySuggestedLayout" class="sl-btn sl-btn--sm sl-btn--lime">Aplicar</button>
+                </div>
+
+                <div class="studio-section-head" style="margin-bottom: 6px;">
+                  <span class="sl-label">6 Grabados Recomendados (1 clic o arrastrar)</span>
+                </div>
+                <div id="suggestedIllustrationsGrid" class="art-grid" style="max-height: 290px; margin-bottom: 14px;">
+                  <!-- 6 sugerencias temáticas -->
+                </div>
+
+                <hr class="sl-divider">
+
+                <div class="studio-section-head" style="margin-bottom: 8px;">
+                  <span class="sl-label">Catálogo Completo (40 Grabados)</span>
+                </div>
+                <div class="two-col-fields" style="margin-bottom: 8px;">
+                  <select id="catalogCategoryFilter" class="sl-select" aria-label="Filtrar catálogo por categoría">
+                    <option value="all">Todas las categorías (40)</option>
+                  </select>
+                  <input id="catalogSearchInput" type="search" class="sl-input" placeholder="Buscar símbolo..." aria-label="Buscar grabado en catálogo">
+                </div>
+                <div id="fullCatalogGrid" class="art-grid" style="max-height: 280px;">
+                  <!-- 40 ilustraciones SVG en tinta -->
+                </div>
+              </div>
+
+              <!-- TAB B: SUBIR FOTO / DIBUJO Y CONVERTIR A GRABADO B&N (SHARP 300 DPI) -->
+              <div id="artPanelUpload" class="is-hidden" role="tabpanel">
+                <div id="uploadTargetSpecsBanner" class="sl-accent-card sl-accent-card--lime" style="padding: 9px 11px; margin-bottom: 12px; font-size: 11.5px;">
+                  <strong>Objetivo 300 DPI:</strong> <span id="uploadTargetPxLabel">567 × 685 px (48 × 58 mm)</span>
+                </div>
+
+                <div id="activeCustomImageBox" class="engraved-current-box is-hidden" style="margin-bottom: 12px;">
+                  <img id="activeCustomImageThumb" class="engraved-current-box__img" src="" alt="Grabado personalizado activo">
+                  <div style="flex: 1; font-size: 11px;">
+                    <strong>Grabado personalizado activo</strong>
+                    <div id="activeCustomImageMetaText" class="sl-muted" style="font-size: 10.5px;">300 DPI · Blanco y negro</div>
+                    <button type="button" id="btnRestoreVectorArt" class="sl-btn sl-btn--sm" style="margin-top: 5px;">
+                      Restaurar ilustración vectorial
+                    </button>
+                  </div>
+                </div>
+
+                <div class="sl-field" style="margin-bottom: 10px;">
+                  <label class="sl-label" for="artUploadFileInput">1. Elegí una Foto o Dibujo (PNG, JPG, WebP)</label>
+                  <div class="upload-dropzone">
+                    <input id="artUploadFileInput" type="file" accept="image/png,image/jpeg,image/webp" class="sl-input" style="font-size: 11.5px;">
+                    <span class="sl-muted" style="font-size: 11px;">Validación binaria segura OWASP · O arrastrá el archivo directo sobre la hoja blanca.</span>
+                  </div>
+                </div>
+
+                <div class="sl-field" style="margin-bottom: 10px;">
+                  <label class="sl-label" for="artEngraveModeSelect">2. Estilo de Grabado Editorial</label>
+                  <select id="artEngraveModeSelect" class="sl-select">
+                    <option value="engraving">Grabado Editorial Atkinson (Ideal para fotos)</option>
+                    <option value="ink">Pluma &amp; Tinta Alto Contraste (Dibujos/Siluetas)</option>
+                    <option value="sketch">Boceto Lápiz Suave (Medios tonos delicados)</option>
+                  </select>
+                </div>
+
+                <div class="sl-field" style="margin-bottom: 12px;">
+                  <label class="sl-label" for="artImageFitSelect">3. Encuadre en el Hueco</label>
+                  <select id="artImageFitSelect" class="sl-select">
+                    <option value="contain">Contener completo (Sin recortar bordes)</option>
+                    <option value="cover">Llenar hueco exacto (300 DPI al corte)</option>
+                  </select>
+                </div>
+
+                <button type="button" id="btnProcessEngraveUpload" class="sl-btn sl-btn--primary sl-btn--block">
+                  Convertir a Grabado B&amp;N a 300 DPI y Aplicar
+                </button>
+                <p id="uploadStatusFeedback" class="sl-muted" style="margin: 8px 0 0; font-size: 11px;"></p>
+              </div>
+
+              <!-- TAB C: BUSCAR GRABADOS ONLINE E IMPORTAR A 300 DPI -->
+              <div id="artPanelOnline" class="is-hidden" role="tabpanel">
+                <p class="sl-muted" style="font-size: 11.5px; margin-bottom: 10px;">
+                  Buscá dibujos minimalistas o grabados de dominio público y arrastralos directo a la hoja para ubicarlos en tinta B&amp;N de 300 DPI.
+                </p>
+
+                <form id="onlineArtSearchForm" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
+                  <div class="sl-field">
+                    <label class="sl-label" for="onlineArtQueryInput">Consulta sugerida por tus versos</label>
+                    <div style="display: flex; gap: 6px;">
+                      <input id="onlineArtQueryInput" type="text" class="sl-input" placeholder="Ej. moon minimal line art">
+                      <button type="submit" id="btnRunOnlineSearch" class="sl-btn sl-btn--primary">Buscar</button>
+                    </div>
+                  </div>
+                  <div class="two-col-fields">
+                    <div class="sl-field">
+                      <label class="sl-label" for="onlineArtStyleSelect">Estilo de búsqueda</label>
+                      <select id="onlineArtStyleSelect" class="sl-select">
+                        <option value="minimalist" selected>Minimalista / Trazo B&amp;N (Línea limpia)</option>
+                        <option value="engraving">Grabado Antiguo / Xilografía</option>
+                        <option value="silhouette">Siluetas Alto Contraste</option>
+                      </select>
+                    </div>
+                    <div class="sl-field">
+                      <label class="sl-label" for="onlineArtModeSelect">Tratamiento al importar</label>
+                      <select id="onlineArtModeSelect" class="sl-select">
+                        <option value="ink">Pluma &amp; Tinta Alto Contraste</option>
+                        <option value="engraving">Grabado Editorial Atkinson</option>
+                        <option value="sketch">Boceto Lápiz Suave</option>
+                      </select>
+                    </div>
+                  </div>
+                </form>
+
+                <div class="online-direct-url-box">
+                  <label class="sl-label" for="onlineDirectUrlInput">O pegá una URL HTTPS directa (PNG, JPG, WebP)</label>
+                  <div style="display: flex; gap: 6px; margin-top: 4px;">
+                    <input id="onlineDirectUrlInput" type="url" class="sl-input" placeholder="https://ejemplo.com/ilustracion.png">
+                    <button type="button" id="btnImportDirectUrlSlot" class="sl-btn sl-btn--sm sl-btn--primary" title="Aplicar en plantilla">Plantilla</button>
+                    <button type="button" id="btnImportDirectUrlExtra" class="sl-btn sl-btn--sm sl-btn--lime" title="Agregar como capa extra arrastrable">+ Extra</button>
+                  </div>
+                </div>
+
+                <div id="onlineSearchNotice" class="sl-card--paper is-hidden" style="padding: 8px 10px; border: var(--border-ink); border-radius: var(--radius-buttons); font-size: 11px; margin-bottom: 10px;"></div>
+
+                <div id="onlineSearchResultsGrid" class="art-grid" style="max-height: 330px;">
+                  <!-- Resultados online o sugerencias locales de respaldo -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Panel Compacto de Imágenes Extra Arrastrables en la Página -->
+            <div id="extraImagesManagerBox" class="sl-card extra-images-manager" aria-label="Imágenes extra arrastrables en la página">
+              <div class="studio-section-head" style="margin-bottom: 6px;">
+                <div>
+                  <span class="sl-eyebrow">Capas Libres en la Hoja</span>
+                  <h3 class="sl-card-heading" style="font-size: 15px; margin-top: 2px;">Imágenes Extra Arrastrables</h3>
+                </div>
+                <span id="extraImagesCountBadge" class="sl-pill sl-pill--mist">0 extras</span>
+              </div>
+              <p class="sl-muted" style="font-size: 11px; margin-bottom: 8px;">
+                Arrastrá cualquier grabado, resultado online o archivo PNG/JPG directo sobre la hoja blanca, o usá <strong>+ Extra</strong>.
+              </p>
+              <div id="extraImagesManagerList" class="extra-images-list">
+                <!-- Lista de capas extra de la página actual -->
+              </div>
+            </div>
+          </aside>
+
+        </div>
+      </section>
+
+      <!-- ==================================================================
+           VISTA 3: FORMATO, SIMULADOR DE LIBRO, PLIEGOS & GUÍA DE ARMADO (FASE 4)
+           ================================================================== -->
+      <section id="viewFormats" class="sl-view is-hidden" aria-labelledby="formatsViewHeading">
+        <div class="library-toolbar" style="border-bottom: var(--border-ink); padding-bottom: 16px; margin-bottom: 20px;">
+          <div>
+            <span class="sl-eyebrow">Fases 4 &amp; 5 · Imposición Multi-Formato &amp; Exportación PDF 1:1</span>
+            <h2 id="formatsViewHeading" class="sl-section-heading" style="margin-top: 4px;">Simulador de Lectura, Pliegos Impuestos &amp; Guía de Armado</h2>
+            <p class="sl-muted" style="margin: 0;">
+              Hojéa tu libro armado página por página, verificá las caras frente/dorso exactas en mm y pt, y seguí la guía de doblado y corte.
+            </p>
+          </div>
+          <button type="button" id="btnBackToStudioFromFormats" class="sl-btn sl-btn--primary">
+            ← Volver al Estudio de Páginas
+          </button>
+        </div>
+
+        <div class="formats-lab-grid">
+          <!-- Columna Izquierda: Configurador físico sincronizado + Ficha Técnica -->
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div class="sl-card">
+              <span class="sl-eyebrow">Configuración del Libro Activo</span>
+              <h3 class="sl-card-heading" style="margin: 4px 0 12px;">Cambiar Formato o Papel en Vivo</h3>
+
+              <div class="sl-field" style="margin-bottom: 10px;">
+                <label class="sl-label" for="fmtViewPaperSelect">Tamaño de Papel en Imprenta / Impresora</label>
+                <select id="fmtViewPaperSelect" class="sl-select">
+                  <option value="A4">Hoja A4 (210 × 297 mm)</option>
+                  <option value="LETTER">Hoja Carta / Letter (215.9 × 279.4 mm)</option>
+                  <option value="A3">Hoja A3 (297 × 420 mm)</option>
+                </select>
+              </div>
+
+              <div class="sl-field" style="margin-bottom: 10px;">
+                <label class="sl-label" for="fmtViewFormatSelect">Sistema de Plegado / Imposición</label>
+                <select id="fmtViewFormatSelect" class="sl-select">
+                  <option value="saddle_half">Cuadernillo Clásico 1/2 Hoja (Doblado al medio · Tipo A5)</option>
+                  <option value="pocket_quarter">Mini-Libro Bolsillo 1/4 Hoja (1 corte + pliegue · Tipo A6)</option>
+                  <option value="single_sheet_zine">Fanzine de 1 Sola Hoja (8 págs · 1 corte central sin grapas)</option>
+                  <option value="custom_nup">Formato a Medida Personalizado (Ancho × Alto en mm)</option>
+                </select>
+              </div>
+
+              <div id="fmtViewCustomWrap" class="custom-mm-row is-hidden" style="margin-bottom: 10px;">
+                <div class="sl-field">
+                  <label class="sl-label" for="fmtViewCustomW">Ancho Página (mm)</label>
+                  <input id="fmtViewCustomW" type="number" min="45" max="400" step="0.5" class="sl-input">
+                </div>
+                <div class="sl-field">
+                  <label class="sl-label" for="fmtViewCustomH">Alto Página (mm)</label>
+                  <input id="fmtViewCustomH" type="number" min="60" max="410" step="0.5" class="sl-input">
+                </div>
+              </div>
+
+              <div id="fmtViewSummaryBox" class="sl-card--paper" style="padding: 12px; border: var(--border-ink); border-radius: var(--radius-buttons); font-size: 12px; line-height: 1.45;">
+                <!-- Explicación humana de cómo sale el libro -->
+              </div>
+            </div>
+
+            <div class="sl-card">
+              <span class="sl-eyebrow">Ficha Técnica 1:1</span>
+              <h3 class="sl-card-heading" style="margin: 4px 0 6px;">Medidas Exactas (mm &amp; pt)</h3>
+              <table class="format-spec-table" aria-label="Especificaciones físicas del formato">
+                <tbody id="formatSpecsTableBody">
+                  <!-- Filas técnicas generadas en vivo -->
+                </tbody>
+              </table>
+            </div>
+
+            <div id="phaseRoadmapCard" class="sl-accent-card sl-accent-card--spring">
+              <span class="sl-eyebrow">Hoja de Ruta · Fases Completadas</span>
+              <h3 class="sl-card-heading" style="margin: 4px 0 8px;">Edición Lista para Imprenta 1:1</h3>
+              <ul class="phase-roadmap-list" aria-label="Estado de fases del estudio editorial">
+                <li class="phase-roadmap-item is-done">
+                  <span class="sl-pill sl-pill--lime">✓ Fases 1–3</span>
+                  <span>Biblioteca, Estudio &amp; Arte 300 DPI</span>
+                </li>
+                <li class="phase-roadmap-item is-done">
+                  <span class="sl-pill sl-pill--lime">✓ Fase 4</span>
+                  <span>Simulador &amp; Imposición Multi-Formato</span>
+                </li>
+                <li class="phase-roadmap-item is-done">
+                  <span class="sl-pill sl-pill--lime">✓ Fase 5</span>
+                  <span>Exportación PDF Vectorial 1:1 &amp; Guía</span>
+                </li>
+              </ul>
+              <p style="font-size: 11.5px; line-height: 1.4; margin: 8px 0 0;">
+                Escala exacta PostScript (<code>1 mm = 2.83465 pt</code>) con poemas, grabados a 300 DPI y capas extra arrastrables.
+              </p>
+            </div>
+          </div>
+
+          <!-- Columna Derecha: Sub-vistas de Fase 4 y Exportación PDF de Fase 5 -->
+          <div class="sl-card formats-stage-card">
+            <div class="formats-subtabs" role="tablist" aria-label="Sub-vistas de formato e imposición">
+              <button type="button" id="fmtSubTabSimulator" class="formats-subtab-btn is-active" role="tab" aria-selected="true" data-fmt-subview="simulator">
+                1. Simulador de Lectura (Libro Armado)
+              </button>
+              <button type="button" id="fmtSubTabSheets" class="formats-subtab-btn" role="tab" aria-selected="false" data-fmt-subview="sheets">
+                2. Pliegos Impuestos (Frente / Dorso)
+              </button>
+              <button type="button" id="fmtSubTabGuide" class="formats-subtab-btn" role="tab" aria-selected="false" data-fmt-subview="guide">
+                3. Guía Paso a Paso (Doblado &amp; Corte)
+              </button>
+            </div>
+
+            <!-- Bloque Fase 5: Exportar para imprenta -->
+            <section id="pressExportBox" class="press-export-box" aria-labelledby="pressExportHeading">
+              <div class="press-export-box__info">
+                <span class="sl-eyebrow">Exportar para imprenta</span>
+                <h3 id="pressExportHeading" class="sl-card-heading" style="font-size: 15px; margin: 2px 0 4px;">
+                  Imprimir al 100% / tamaño real, sin ajustar a página
+                </h3>
+                <p id="exportDuplexSummary" class="sl-muted" style="margin: 0; font-size: 12px; line-height: 1.4;">
+                  Calculando modo de impresión y pliegos...
+                </p>
+              </div>
+              <div class="press-export-box__actions">
+                <a id="btnDownloadPressPdf" href="#" download class="sl-btn sl-btn--lime">
+                  Descargar PDF para Imprenta 1:1
+                </a>
+                <a id="btnDownloadGuidePdf" href="#" download class="sl-btn">
+                  Descargar Guía de Armado (PDF)
+                </a>
+              </div>
+            </section>
+
+            <!-- Sub-vista A: Simulador de Libro Armado -->
+            <div id="fmtPanelSimulator" role="tabpanel">
+              <div id="bookSimulatorContainer">
+                <!-- Renderizado por bookSimulator.js -->
+              </div>
+            </div>
+
+            <!-- Sub-vista B: Pliegos Impuestos Frente / Dorso -->
+            <div id="fmtPanelSheets" class="is-hidden" role="tabpanel">
+              <div id="impositionSheetsContainer">
+                <!-- Renderizado por impositionView.js -->
+              </div>
+            </div>
+
+            <!-- Sub-vista C: Guía Paso a Paso de Doblado, Corte y Encuadernado -->
+            <div id="fmtPanelGuide" class="is-hidden" role="tabpanel">
+              <div id="foldingGuideContainer">
+                <!-- Renderizado por impositionView.js -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ======================================================================
+       MODAL / CAJÓN "+ INGRESO RÁPIDO DE POEMA" (quickPoemModal.js)
+       ====================================================================== -->
+  <div id="quickPoemModal" class="sl-modal-backdrop is-hidden" role="dialog" aria-modal="true" aria-labelledby="quickModalTitle">
+    <div class="sl-modal-dialog">
+      <div class="sl-modal-header">
+        <div>
+          <span class="sl-eyebrow">Asistente Editorial Instantáneo</span>
+          <h2 id="quickModalTitle" class="sl-section-heading" style="margin: 2px 0 0;">+ Ingreso Rápido de Poema</h2>
+        </div>
+        <button type="button" id="btnCloseQuickPoemModal" class="sl-btn sl-btn--sm" aria-label="Cerrar asistente rápido">
+          ✕ Cerrar
+        </button>
+      </div>
+
+      <div class="quick-poem-grid">
+        <!-- Entrada del Poema -->
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div class="two-col-fields">
+            <div class="sl-field">
+              <label class="sl-label" for="quickPoemTitleInput">Título del Poema (Opcional)</label>
+              <input id="quickPoemTitleInput" type="text" class="sl-input" placeholder="Ej. En este o en otro mundo" maxlength="120">
+            </div>
+            <div class="sl-field">
+              <label class="sl-label" for="quickPoemSignatureInput">Firma al Pie (Opcional)</label>
+              <input id="quickPoemSignatureInput" type="text" class="sl-input" placeholder="Ej. - Grego" maxlength="80">
+            </div>
+          </div>
+
+          <div class="sl-field">
+            <label class="sl-label" for="quickPoemTextInput">Pegá o escribí tus versos completos</label>
+            <textarea id="quickPoemTextInput" class="sl-textarea" rows="11" placeholder="Escribí o pegá aquí el poema completo con sus estrofas...&#10;&#10;El motor semántico detectará al instante el clima poético, la mejor plantilla y 3 grabados en tinta a medida."></textarea>
+          </div>
+
+          <div id="quickPoemStatsStrip" class="sl-muted" style="font-size: 11.5px;">
+            0 líneas · 0 estrofas
+          </div>
+        </div>
+
+        <!-- Diagnóstico en Tiempo Real + 3 Mejores Ilustraciones -->
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div class="sl-accent-card sl-accent-card--cornflower" style="padding: 12px;">
+            <span class="sl-eyebrow">Lectura Semántica &amp; Maquetación</span>
+            <div id="quickDetectedThemes" class="theme-tags-wrap" style="margin-bottom: 8px;">
+              <!-- Emoción/tema detectado -->
+            </div>
+
+            <div class="two-col-fields">
+              <div class="sl-field">
+                <label class="sl-label" for="quickLayoutSelect">Plantilla Recomendada</label>
+                <select id="quickLayoutSelect" class="sl-select"></select>
+              </div>
+              <div class="sl-field">
+                <label class="sl-label" for="quickFontSizeSelect">Cuerpo Ideal</label>
+                <select id="quickFontSizeSelect" class="sl-select"></select>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3 Mejores Ilustraciones Temáticas en 1 Clic -->
+          <div class="sl-card" style="padding: 12px;">
+            <div class="studio-section-head" style="margin-bottom: 6px;">
+              <span class="sl-label">3 Grabados Temáticos Recomendados</span>
+              <span id="quickSlotDimensionsBadge" class="sl-pill sl-pill--mist">300 DPI</span>
+            </div>
+            <div id="quickTopIllustrationsRow" class="quick-art-row">
+              <!-- 3 tarjetas clicables con mm y px @ 300 DPI -->
+            </div>
+          </div>
+
+          <!-- Aviso Destacado #edfe5e cuando el poema supera 1 página del formato elegido -->
+          <div id="quickOverflowAlertBox" class="sl-accent-card sl-accent-card--lime is-hidden" style="padding: 12px;">
+            <span class="sl-eyebrow">Poema Extenso Detectado</span>
+            <p id="quickOverflowExplanation" style="font-size: 11.5px; margin: 4px 0 6px; line-height: 1.4;"></p>
+            <div class="quick-overflow-options">
+              <label class="quick-radio-option">
+                <input type="radio" name="quickOverflowMode" value="split" checked>
+                <span><strong>(a) Dividir automáticamente por estrofas en 2 páginas consecutivas</strong> (lectura aireada de libro abierto).</span>
+              </label>
+              <label class="quick-radio-option">
+                <input type="radio" name="quickOverflowMode" value="shrink">
+                <span><strong>(b) Ajustar tamaño de letra en 1 sola página</strong> para que entre completo sin cortar.</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="quick-modal-footer">
+        <button type="button" id="btnCancelQuickPoem" class="sl-btn">Cancelar</button>
+        <button type="button" id="btnApplyQuickToCurrentPage" class="sl-btn sl-btn--cornflower">
+          Aplicar en Página Actual
+        </button>
+        <button type="button" id="btnInsertQuickAsNewPages" class="sl-btn sl-btn--lime">
+          + Insertar como Nueva(s) Página(s) en el Libro
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       MODAL: ESCANEAR CARTA EN PAPEL (OCR ESPAÑOL + EXTRACCIÓN DE DIBUJOS)
+       ====================================================================== -->
+  <div id="paperScannerModal" class="sl-modal-backdrop is-hidden" role="dialog" aria-modal="true" aria-labelledby="paperScannerTitle">
+    <div class="sl-modal-card scanner-modal-card">
+      <div class="sl-modal-head">
+        <div>
+          <span class="sl-eyebrow">Digitalizador de Cartas &amp; Manuscritos · OCR Español + Grabado 300 DPI</span>
+          <h2 id="paperScannerTitle" class="sl-section-heading" style="margin: 2px 0 0;">Escanear Carta o Poema en Papel</h2>
+        </div>
+        <button type="button" id="btnClosePaperScanner" class="sl-btn sl-btn--sm" aria-label="Cerrar escáner de cartas">
+          ✕ Cerrar
+        </button>
+      </div>
+
+      <div class="scanner-grid">
+        <!-- COLUMNA IZQUIERDA: CAPTURA / FOTO + RECORTE MANUAL DE DIBUJOS -->
+        <div class="scanner-col">
+          <div id="scannerDropzone" class="scanner-dropzone">
+            <input id="scannerFileInput" type="file" accept="image/jpeg,image/png,image/webp" class="is-hidden">
+            <input id="scannerCameraFileInput" type="file" accept="image/*" capture="environment" class="is-hidden">
+            <p class="scanner-dropzone__title">Subí una foto de tu carta en papel o sacá una con la cámara</p>
+            <p class="sl-muted" style="font-size: 11.5px; margin: 4px 0 10px;">
+              Acepta JPG, PNG o WebP. Reconoce letras en español y detecta dibujos hechos a mano.
+            </p>
+            <div class="scanner-capture-actions">
+              <button type="button" id="btnScannerPickFile" class="sl-btn sl-btn--sm sl-btn--primary">
+                Elegir Foto / Escaneo
+              </button>
+              <button type="button" id="btnScannerMobileCam" class="sl-btn sl-btn--sm sl-btn--cornflower">
+                Cámara del Dispositivo
+              </button>
+              <button type="button" id="btnScannerOpenWebcam" class="sl-btn sl-btn--sm">
+                Cámara en Vivo
+              </button>
+            </div>
+          </div>
+
+          <!-- Cámara en vivo (desktop/móvil) -->
+          <div id="scannerWebcamWrap" class="scanner-camera-wrap is-hidden">
+            <video id="scannerWebcamVideo" autoplay playsinline muted class="scanner-webcam-video"></video>
+            <div class="scanner-capture-actions" style="margin-top: 8px;">
+              <button type="button" id="btnScannerTakePhoto" class="sl-btn sl-btn--sm sl-btn--lime">
+                Tomar Foto de la Carta
+              </button>
+              <button type="button" id="btnScannerStopWebcam" class="sl-btn sl-btn--sm">
+                Cancelar Cámara
+              </button>
+            </div>
+          </div>
+
+          <!-- Opciones de escaneo -->
+          <div class="sl-card scanner-options-card">
+            <div class="two-col-fields">
+              <div class="sl-field">
+                <label class="sl-label" for="scannerEnhanceSelect">Contraste del Papel</label>
+                <select id="scannerEnhanceSelect" class="sl-select">
+                  <option value="standard" selected>Estándar (Tinta oscura)</option>
+                  <option value="light_ink">Lápiz / Tinta clara</option>
+                  <option value="shadow">Foto con sombra / luz irregular</option>
+                </select>
+              </div>
+              <div class="sl-field">
+                <label class="sl-label" for="scannerDrawingModeSelect">Estilo de Dibujo Extraído</label>
+                <select id="scannerDrawingModeSelect" class="sl-select">
+                  <option value="ink" selected>Tinta Pluma B&amp;N (limpio)</option>
+                  <option value="engraving">Grabado Trama Atkinson</option>
+                  <option value="sketch">Grafito / Trazo Suave</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="scanner-options-row">
+              <label class="scanner-checkbox">
+                <input id="scannerDetectDrawingCheck" type="checkbox" checked>
+                <span>Detectar y extraer dibujos automáticamente</span>
+              </label>
+              <button type="button" id="btnScannerRunOcr" class="sl-btn sl-btn--sm sl-btn--lime" disabled>
+                Analizar Carta (Texto + Dibujo)
+              </button>
+            </div>
+            <div id="scannerStatusBar" class="scanner-status-bar">
+              Seleccioná o fotografiá una carta para comenzar el reconocimiento.
+            </div>
+          </div>
+
+          <!-- Vista previa de la foto + recorte manual de dibujo -->
+          <div id="scannerPreviewCard" class="sl-card scanner-preview-card is-hidden">
+            <div class="studio-section-head" style="margin-bottom: 6px;">
+              <span class="sl-label">Vista de la Carta (arrastrá para recortar un dibujo)</span>
+              <button type="button" id="btnScannerExtractManualCrop" class="sl-btn sl-btn--sm sl-btn--cornflower is-hidden">
+                Extraer Recorte Seleccionado
+              </button>
+            </div>
+            <div id="scannerPreviewStage" class="scanner-preview-stage" title="Arrastrá con el mouse sobre cualquier dibujo de la carta para extraerlo en 300 DPI">
+              <img id="scannerPreviewImg" alt="Vista previa de la carta escaneada" class="scanner-preview-img" draggable="false">
+              <div id="scannerCropBox" class="scanner-crop-box is-hidden"></div>
+            </div>
+            <p class="sl-muted" style="font-size: 11px; margin: 6px 0 0;">
+              Tip: si la carta tiene un dibujo pequeño o una firma dibujada, arrastrá un recuadro sobre esa zona y tocá <strong>Extraer Recorte Seleccionado</strong>.
+            </p>
+          </div>
+        </div>
+
+        <!-- COLUMNA DERECHA: TEXTO RECONOCIDO + DIBUJO EXTRAÍDO LISTO PARA LA HOJA -->
+        <div class="scanner-col">
+          <div class="sl-accent-card sl-accent-card--cornflower" style="padding: 12px;">
+            <div class="studio-section-head" style="margin-bottom: 6px;">
+              <span class="sl-eyebrow">Texto Reconocido de la Carta</span>
+              <span id="scannerConfidencePill" class="sl-pill sl-pill--mist">Sin escanear</span>
+            </div>
+
+            <div class="two-col-fields" style="margin-bottom: 8px;">
+              <div class="sl-field">
+                <label class="sl-label" for="scannerResultTitle">Título Detectado (editable)</label>
+                <input id="scannerResultTitle" type="text" class="sl-input" placeholder="Ej. Carta de octubre" maxlength="120">
+              </div>
+              <div class="sl-field">
+                <label class="sl-label" for="scannerResultSignature">Firma Detectada (editable)</label>
+                <input id="scannerResultSignature" type="text" class="sl-input" placeholder="Ej. — Con cariño" maxlength="80">
+              </div>
+            </div>
+
+            <div class="sl-field">
+              <label class="sl-label" for="scannerResultText">Versos / Texto de la Carta (podés corregir antes de pasar a la hoja)</label>
+              <textarea id="scannerResultText" class="sl-textarea" rows="10" placeholder="Acá aparecerá el texto reconocido de tu carta en papel, listo para revisar y pasar a la hoja del libro..."></textarea>
+            </div>
+          </div>
+
+          <!-- Tarjeta de dibujo extraído en 300 DPI -->
+          <div class="sl-card scanner-drawing-card">
+            <div class="studio-section-head" style="margin-bottom: 8px;">
+              <div>
+                <span class="sl-eyebrow">Dibujo / Ornamento en Tinta 300 DPI</span>
+                <h3 class="sl-card-heading" style="margin-top: 2px; font-size: 14px;">Ilustración Detectada de la Carta</h3>
+              </div>
+              <button type="button" id="btnScannerClearDrawing" class="sl-btn sl-btn--sm is-hidden">Quitar Dibujo</button>
+            </div>
+
+            <div id="scannerDrawingEmpty" class="scanner-drawing-empty">
+              Todavía no se extrajo ningún dibujo. Al analizar la carta se buscarán trazos automáticamente, o podés marcar un recuadro manual sobre la foto.
+            </div>
+
+            <div id="scannerDrawingReady" class="scanner-drawing-ready is-hidden">
+              <div class="scanner-drawing-thumb-wrap">
+                <img id="scannerDrawingThumb" alt="Dibujo extraído de la carta en tinta B&amp;N" class="scanner-drawing-thumb">
+              </div>
+              <div style="flex: 1; min-width: 160px;">
+                <div id="scannerDrawingMeta" class="sl-muted" style="font-size: 11px; margin-bottom: 8px;">300 DPI · Tinta B&amp;N</div>
+                <div class="sl-field">
+                  <label class="sl-label" for="scannerDrawingPlacement">¿Cómo colocar este dibujo en la hoja?</label>
+                  <select id="scannerDrawingPlacement" class="sl-select">
+                    <option value="primary" selected>Como ilustración principal de la página</option>
+                    <option value="extra">Como imagen extra arrastrable (libre)</option>
+                    <option value="none">No incluir el dibujo (solo pasar el texto)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="quick-modal-footer">
+        <button type="button" id="btnCancelPaperScanner" class="sl-btn">Cancelar</button>
+        <button type="button" id="btnApplyScanToCurrentPage" class="sl-btn sl-btn--cornflower">
+          Pasar a la Página Actual
+        </button>
+        <button type="button" id="btnInsertScanAsNewPage" class="sl-btn sl-btn--lime">
+          + Crear Nueva Página con esta Carta
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFICACIÓN EDITORIAL -->
+  <div id="slToast" class="sl-toast is-hidden" role="status" aria-live="polite"></div>
+
+  <script id="initialBooksData" type="application/json"><%- JSON.stringify(typeof initialBooks !== 'undefined' ? initialBooks : null).replace(/</g, '\\u003c') %></script>
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>
